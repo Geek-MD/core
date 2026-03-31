@@ -22,7 +22,7 @@ from .entity import RingBaseEntity, RingDeviceT
 PARALLEL_UPDATES = 0
 
 
-@dataclass(frozen=True, kw_only=True)
+dataclass(frozen=True, kw_only=True)
 class RingEventEntityDescription(EventEntityDescription, Generic[RingDeviceT]):
     """Base class for event entity description."""
 
@@ -86,6 +86,10 @@ class RingEvent(RingBaseEntity[RingListenCoordinator, RingDeviceT], EventEntity)
         super().__init__(device, coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{device.id}-{description.key}"
+        # Override the coordinator context to use device_api_id (doorbot_id)
+        # so that _async_update_listeners correctly matches incoming Ring events,
+        # which are keyed by doorbot_id, not the local device.id.
+        self.coordinator_context = device.device_api_id
 
     @callback
     def _async_handle_event(self, event: str) -> None:
