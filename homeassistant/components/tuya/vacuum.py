@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from tuya_device_handlers import TUYA_QUIRKS_REGISTRY
 from tuya_device_handlers.definition.vacuum import (
     TuyaVacuumDefinition,
     get_default_definition,
@@ -37,6 +38,20 @@ _TUYA_TO_HA_ACTIVITY_MAPPINGS = {
 }
 
 
+def _get_quirk_entities(
+    manager: Manager, device: CustomerDevice
+) -> list[TuyaVacuumEntity] | None:
+    if (quirk := TUYA_QUIRKS_REGISTRY.get_quirk_for_device(device)) is None or (
+        entity_quirks := quirk.vacuum_quirks
+    ) is None:
+        return None
+    return [
+        TuyaVacuumEntity(device, manager, definition)
+        for entity_quirk in entity_quirks
+        if (definition := entity_quirk.definition_fn(device))
+    ]
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: TuyaConfigEntry,
@@ -51,6 +66,9 @@ async def async_setup_entry(
         entities: list[TuyaVacuumEntity] = []
         for device_id in device_ids:
             device = manager.device_map[device_id]
+            if (quirk_entities := _get_quirk_entities(manager, device)) is not None:
+                entities.extend(quirk_entities)
+                continue
             if device.category == DeviceCategory.SD:
                 entities.append(
                     TuyaVacuumEntity(device, manager, get_default_definition(device))
