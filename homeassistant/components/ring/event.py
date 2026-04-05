@@ -110,3 +110,4 @@ class RingEvent(RingBaseEntity[RingListenCoordinator, RingDeviceT], EventEntity)
 
     async def async_update(self) -> None:
         """All updates are passive."""
+
