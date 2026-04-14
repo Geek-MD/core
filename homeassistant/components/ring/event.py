@@ -87,6 +87,7 @@ class RingEvent(RingBaseEntity[RingListenCoordinator, RingDeviceT], EventEntity)
         super().__init__(device, coordinator)
         self.entity_description = description
         self._attr_unique_id = f"{device.id}-{description.key}"
+        self.coordinator_context = device.device_api_id
 
     @callback
     def _async_handle_event(self, event: str) -> None:
